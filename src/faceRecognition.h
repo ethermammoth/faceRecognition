@@ -26,5 +26,8 @@ class faceRecognition : public ofBaseApp{
 
         ofVideoGrabber cam;
         ofxFaceTrackerThreaded camTracker;
-		
+        bool faceFound;
+        Mat faceimg;
+        ofPolyline faceOutline;
+        ofRectangle faceBB;
 };
