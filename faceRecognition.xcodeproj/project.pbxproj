@@ -14,6 +14,7 @@
 		2023ef517ed2d8b397511d4bf2052690 /* Helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = b9076967f8c54a04362c04aa9e3bb906 /* Helpers.cpp */; };
 		24735cd2e138dc5c1f0a10855fcd74db /* ofxFaceTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 185bb9b07b8db74bd2d3211fada3364b /* ofxFaceTracker.cpp */; };
 		250a95ba26587be85db0a353e6e1dea2 /* ofxCvColorImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ce9c7160245b19131dae61282ee6cb53 /* ofxCvColorImage.cpp */; };
+		3A2079B5178FE54D008DC421 /* ofxCvFaceRec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */; };
 		45cc483a999bf1065a6b926c53724159 /* Distance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9dbd717072c35d324e1016697d7aa720 /* Distance.cpp */; };
 		4f02f4d92c36436c945a6716704c05de /* Patch.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3769b74412282aefebdd8c8622b97be5 /* Patch.cc */; };
 		5a4349e9754d6fa14c0f2a3a1abc30b6 /* tinyxmlparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = fc5da1c87211d4f6377da7199d8c5a1e /* tinyxmlparser.cpp */; };
@@ -127,6 +128,8 @@
 		33ff03222909c1a0ece437531183b507 /* cv.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = cv.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv/cv.h; sourceTree = SOURCE_ROOT; };
 		36f0ff7f8d7342d220cc6319cac5ad59 /* dummy.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = dummy.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/dummy.h; sourceTree = SOURCE_ROOT; };
 		3769b74412282aefebdd8c8622b97be5 /* Patch.cc */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Patch.cc; path = ../../../addons/ofxFaceTracker/libs/FaceTracker/src/lib/Patch.cc; sourceTree = SOURCE_ROOT; };
+		3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxCvFaceRec.cpp; sourceTree = "<group>"; };
+		3A2079B4178FE54D008DC421 /* ofxCvFaceRec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxCvFaceRec.h; sourceTree = "<group>"; };
 		3c232045833313b99efe0b14840b6108 /* ofxCvMain.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxCvMain.h; path = ../../../addons/ofxOpenCv/src/ofxCvMain.h; sourceTree = SOURCE_ROOT; };
 		402c8f4015542356d362ac883b9c826c /* Calibration.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Calibration.cpp; path = ../../../addons/ofxCv/libs/ofxCv/src/Calibration.cpp; sourceTree = SOURCE_ROOT; };
 		4117b8c24d49837d3df9c23bd2405bdc /* ofxUIToggle.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUIToggle.h; path = ../../../addons/ofxUI/src/ofxUIToggle.h; sourceTree = SOURCE_ROOT; };
@@ -748,6 +751,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */,
+				3A2079B4178FE54D008DC421 /* ofxCvFaceRec.h */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* faceRecognition.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* faceRecognition.h */,
@@ -1112,6 +1117,7 @@
 				091cd626fecb03b3a6b3a1b24177f44d /* PAW.cc in Sources */,
 				e6e21460246219ee9394310f358d02d9 /* PDM.cc in Sources */,
 				e43c5a4ab73c09290f70362d40254f26 /* Tracker.cc in Sources */,
+				3A2079B5178FE54D008DC421 /* ofxCvFaceRec.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

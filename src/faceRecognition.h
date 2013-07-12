@@ -7,6 +7,8 @@ using namespace cv;
 
 #include "ofxFaceTrackerThreaded.h"
 
+#include "ofxCvFaceRec.h"
+
 class faceRecognition : public ofBaseApp{
 
 	public:
@@ -26,8 +28,22 @@ class faceRecognition : public ofBaseApp{
 
         ofVideoGrabber cam;
         ofxFaceTrackerThreaded camTracker;
+    
+        int camWidth, camHeight;
+        int finalSize;
         bool faceFound;
-        Mat faceimg;
+    
         ofPolyline faceOutline;
         ofRectangle faceBB;
+        ofPath faceSolid;
+        ofFbo maskFbo, resultFbo;
+        ofShader maskShader;
+    
+        ofImage faceImage;
+        
+        int smoothFactor;
+    
+        //CV
+        ofxCvColorImage faceCvColor;
+        ofxCvGrayscaleImage faceCvGray;
 };
