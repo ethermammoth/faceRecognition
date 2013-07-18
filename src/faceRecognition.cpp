@@ -43,10 +43,72 @@ void faceRecognition::setup(){
     maskShader.setupShaderFromSource(GL_FRAGMENT_SHADER, shaderProgram);
     maskShader.linkProgram();
     
+    //GUI SETUP
+    uiCanvas = new ofxUICanvas(20.f, camHeight + 85.f, 250.f, 200.f);
+    uiCanvas->setName("datainput");
+    
+    uiFirstName = new ofxUITextInput("FirstName", "First Name", 200.f);
+    uiLastName = new ofxUITextInput("LastName", "Last Name", 200.f);
+    
+    uiCanvas->addLabel("DATA INPUT", OFX_UI_FONT_MEDIUM);
+    uiCanvas->addSpacer();
+    uiCanvas->addWidgetDown(uiFirstName);
+    uiCanvas->addWidgetDown(uiLastName);
+    uiCanvas->addSpacer();
+    
+    ofAddListener(uiCanvas->newGUIEvent,this,&faceRecognition::guiEvent);
+    
+    //EVM GUI
+    uiEvm = new ofxUICanvas(camWidth + 240.f, 25.f, 285.f, 400.f);
+    uiEvm->setName("evm");
+    
+    float length = 280.f;
+    float dim = 20.f;
+    
+    uiEvm->addLabel("EULERIAN VIDEO MAGNIFICATION", OFX_UI_FONT_MEDIUM);
+    uiEvm->addWidgetDown(new ofxUIFPS(OFX_UI_FONT_MEDIUM));
+    uiEvm->addSpacer(length, 2);
+	uiEvm->addLabel("TEMPORAL FILTER", OFX_UI_FONT_MEDIUM);
+    temporal_filter.push_back("Temporal IIR");
+    temporal_filter.push_back("Temporal Ideal (Unimplemented)");
+    uiEvm->addRadio("SELECT TEMPORAL FILTER TYPE", temporal_filter, OFX_UI_ORIENTATION_VERTICAL, dim, dim);
+    
+    uiEvm->addSpacer(length, 2);
+    uiEvm->addLabel("IIR FILTER PARAMETER", OFX_UI_FONT_MEDIUM);
+    uiEvm->addSlider("Amplification", 0, 100, &alpha_iir, length, dim);
+    uiEvm->addSlider("Cut-off Wavelength", 0, 100, &lambda_c_iir, length, dim);
+    uiEvm->addSlider("r1 (Low cut-off?)", 0, 1, &r1, length, dim);
+    uiEvm->addSlider("r2 (High cut-off?)", 0, 1, &r2, length, dim);
+	uiEvm->addSlider("ChromAttenuation", 0, 1, &chromAttenuation_iir, length, dim);
+    
+    uiEvm->addSpacer(length, 2);
+    uiEvm->addLabel("IDEAL FILTER PARAMETER", OFX_UI_FONT_MEDIUM);
+    uiEvm->addSlider("Amplification", 0, 200, &alpha_ideal, length, dim);
+    uiEvm->addSlider("Cut-off Wavelength", 0, 100, &lambda_c_ideal, length, dim);
+    uiEvm->addSlider("Low cut-off", 0, 10, &fl, length, dim);
+    uiEvm->addSlider("High cut-off", 0, 10, &fh, length, dim);
+    uiEvm->addSlider("SamplingRate", 1, 60, &samplingRate, length, dim);
+    uiEvm->addSlider("ChromAttenuation", 0, 1, &chromAttenuation_ideal, length, dim);
+    
+    ofAddListener(uiEvm->newGUIEvent, this, &faceRecognition::guiEvent);
+    
+    firstName = "";
+    lastName = "";
+    
+#ifdef USE_UVC_CONTROLS
+    uvcControl.useCamera(0x5ac, 0x8507, 0x00);
+#endif
+    
 }
 
 //--------------------------------------------------------------
 void faceRecognition::update(){
+    //update EVM parameters
+    evm.setTemporalFilter(filter);
+    evm.setParamsIIR(alpha_iir, lambda_c_iir, r1, r2, chromAttenuation_iir);
+    evm.setParamsIdeal(alpha_ideal, lambda_c_ideal, fl, fh, samplingRate, chromAttenuation_ideal);
+    
+    
     cam.update();
     if(cam.isFrameNew()) {
         
@@ -108,15 +170,22 @@ void faceRecognition::update(){
             //faceCvGray.contrastStretch();            
             cvEqualizeHist(faceCvGray.getCvImage(), faceCvGray.getCvImage());
             
+            evm.update(toCv(faceImage));
         }
     }
 }
 
 //--------------------------------------------------------------
 void faceRecognition::draw(){
-    ofBackground(0);
+    
+    ofBackgroundGradient(ofColor(64), ofColor(0));
     ofSetColor(255, 255, 255);
-    cam.draw(0, 0);
+    
+    ofDrawBitmapStringHighlight("CAM STREAM", 20.f, 40.f);
+    ofSetColor(255, 0, 0);
+    ofRect(10.f, 50.f, camWidth + 20.f, camHeight + 20.f);
+    ofSetColor(255, 255, 255);
+    cam.draw(20.f, 60.f);
     
     ofDrawBitmapStringHighlight("EXTRACTED FACE", camWidth + 50, 40);
     ofSetColor(255, 0, 0);
@@ -127,16 +196,54 @@ void faceRecognition::draw(){
     ofSetColor(255, 0, 0);
     ofRect(camWidth + 50, 250, 170, 170);
     
-    if(camTracker.getFound()) {
+    ofSetColor(255, 255, 255);
+    ofDrawBitmapStringHighlight("MOTION AMPLIFIED", camWidth + 50, 440);
+    ofSetColor(255, 0, 0);
+    ofRect(camWidth + 50, 450, 170, 170);
+    
+    if(faceFound) {
         ofSetColor(255, 255, 255);
         faceCvColor.draw(camWidth + 60, 60);
         faceCvGray.draw(camWidth + 60, 260);
+        evm.draw(camWidth + 60, 460);
+        ofPushMatrix();
+        ofTranslate(20.f, 60.f);
         camTracker.draw();
+        ofPopMatrix();
+    }
+}
+
+//--------------------------------------------------------------
+void faceRecognition::saveFaceImage(ofxCvGrayscaleImage img){
+    ofImage saveImg;
+    saveImg.setFromPixels(img.getPixels(), img.width, img.height, OF_IMAGE_GRAYSCALE);
+    //PATH FACES _FirstName_LastName . fileFormat
+    //Evtl noch XML datei / bzw txt datei mit mehr daten
+    saveImg.saveImage("faces/test.jpg");
+}
+
+//--------------------------------------------------------------
+void faceRecognition::guiEvent(ofxUIEventArgs &e){
+    string name = e.widget->getName();
+	int kind = e.widget->getKind();
+    
+    if(name == "FirstName"){
+        firstName = uiFirstName->getTextString();
     }
     
-    string feedbackTxt = "FPS: " + ofToString(ofGetFrameRate());
-    ofDrawBitmapStringHighlight(feedbackTxt, 15, 15);
-
+    if(name == "LastName"){
+        lastName = uiLastName->getTextString();
+    }
+    
+    if(name == "Temporal IIR"){
+        filter = EVM_TEMPORAL_IIR;
+    }
+    
+    if (name == "Temporal Ideal (Unimplemented)"){
+        filter = EVM_TEMPORAL_IDEAL;
+    }
+    
+    cout << "UI event: " << name << endl;
 }
 
 //--------------------------------------------------------------
@@ -146,7 +253,27 @@ void faceRecognition::keyPressed(int key){
 
 //--------------------------------------------------------------
 void faceRecognition::keyReleased(int key){
+    if(key == OF_KEY_DOWN){
+        saveFaceImage(faceCvGray);
+    }
+#ifdef USE_UVC_CONTROLS    
+    if(key == OF_KEY_UP){
+        uvcControl.setAutoExposure(!uvcControl.getExposure());
+        uvcControl.setAutoFocus(!uvcControl.getAutoFocus());
+        uvcControl.setAutoWhiteBalance(!uvcControl.getAutoWhiteBalance());
+        uvcExposure = uvcControl.getExposure();
+    }
     
+    if(key == OF_KEY_RIGHT){
+        uvcExposure += 0.05;
+        uvcExposure = ofClamp(uvcExposure, 0.f, 1.f);
+    }
+    
+    if(key == OF_KEY_LEFT){
+        uvcExposure -= 0.05;
+        uvcExposure = ofClamp(uvcExposure, 0.f, 1.f);
+    }
+#endif
 }
 
 //--------------------------------------------------------------
@@ -182,4 +309,9 @@ void faceRecognition::gotMessage(ofMessage msg){
 //--------------------------------------------------------------
 void faceRecognition::dragEvent(ofDragInfo dragInfo){ 
 
+}
+
+void faceRecognition::exit(){
+    delete uiCanvas;
+    delete uiEvm;
 }

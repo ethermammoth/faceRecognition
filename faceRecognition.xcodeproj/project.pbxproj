@@ -15,6 +15,11 @@
 		24735cd2e138dc5c1f0a10855fcd74db /* ofxFaceTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 185bb9b07b8db74bd2d3211fada3364b /* ofxFaceTracker.cpp */; };
 		250a95ba26587be85db0a353e6e1dea2 /* ofxCvColorImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ce9c7160245b19131dae61282ee6cb53 /* ofxCvColorImage.cpp */; };
 		3A2079B5178FE54D008DC421 /* ofxCvFaceRec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */; };
+		3AC21657179879AF00CA3846 /* ofxEvm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AC21655179879AF00CA3846 /* ofxEvm.cpp */; };
+		3AC2165C179879CA00CA3846 /* Evm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AC21658179879CA00CA3846 /* Evm.cpp */; };
+		3AC2165D179879CA00CA3846 /* Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AC2165A179879CA00CA3846 /* Utils.cpp */; };
+		3AC9D420179182FA001701D0 /* UVCCameraControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AC9D41F179182FA001701D0 /* UVCCameraControl.m */; };
+		3AC9D42317918306001701D0 /* ofxUVC.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3AC9D42217918306001701D0 /* ofxUVC.mm */; };
 		45cc483a999bf1065a6b926c53724159 /* Distance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9dbd717072c35d324e1016697d7aa720 /* Distance.cpp */; };
 		4f02f4d92c36436c945a6716704c05de /* Patch.cc in Sources */ = {isa = PBXBuildFile; fileRef = 3769b74412282aefebdd8c8622b97be5 /* Patch.cc */; };
 		5a4349e9754d6fa14c0f2a3a1abc30b6 /* tinyxmlparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = fc5da1c87211d4f6377da7199d8c5a1e /* tinyxmlparser.cpp */; };
@@ -130,6 +135,16 @@
 		3769b74412282aefebdd8c8622b97be5 /* Patch.cc */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Patch.cc; path = ../../../addons/ofxFaceTracker/libs/FaceTracker/src/lib/Patch.cc; sourceTree = SOURCE_ROOT; };
 		3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxCvFaceRec.cpp; sourceTree = "<group>"; };
 		3A2079B4178FE54D008DC421 /* ofxCvFaceRec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxCvFaceRec.h; sourceTree = "<group>"; };
+		3AC21655179879AF00CA3846 /* ofxEvm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxEvm.cpp; sourceTree = "<group>"; };
+		3AC21656179879AF00CA3846 /* ofxEvm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxEvm.h; sourceTree = "<group>"; };
+		3AC21658179879CA00CA3846 /* Evm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Evm.cpp; sourceTree = "<group>"; };
+		3AC21659179879CA00CA3846 /* Evm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Evm.h; sourceTree = "<group>"; };
+		3AC2165A179879CA00CA3846 /* Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utils.cpp; sourceTree = "<group>"; };
+		3AC2165B179879CA00CA3846 /* Utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utils.h; sourceTree = "<group>"; };
+		3AC9D41E179182FA001701D0 /* UVCCameraControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UVCCameraControl.h; sourceTree = "<group>"; };
+		3AC9D41F179182FA001701D0 /* UVCCameraControl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UVCCameraControl.m; sourceTree = "<group>"; };
+		3AC9D42117918306001701D0 /* ofxUVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxUVC.h; sourceTree = "<group>"; };
+		3AC9D42217918306001701D0 /* ofxUVC.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ofxUVC.mm; sourceTree = "<group>"; };
 		3c232045833313b99efe0b14840b6108 /* ofxCvMain.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxCvMain.h; path = ../../../addons/ofxOpenCv/src/ofxCvMain.h; sourceTree = SOURCE_ROOT; };
 		402c8f4015542356d362ac883b9c826c /* Calibration.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Calibration.cpp; path = ../../../addons/ofxCv/libs/ofxCv/src/Calibration.cpp; sourceTree = SOURCE_ROOT; };
 		4117b8c24d49837d3df9c23bd2405bdc /* ofxUIToggle.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUIToggle.h; path = ../../../addons/ofxUI/src/ofxUIToggle.h; sourceTree = SOURCE_ROOT; };
@@ -479,6 +494,19 @@
 			name = src;
 			sourceTree = "<group>";
 		};
+		3AC2165E179879D100CA3846 /* evm */ = {
+			isa = PBXGroup;
+			children = (
+				3AC21655179879AF00CA3846 /* ofxEvm.cpp */,
+				3AC21656179879AF00CA3846 /* ofxEvm.h */,
+				3AC21658179879CA00CA3846 /* Evm.cpp */,
+				3AC21659179879CA00CA3846 /* Evm.h */,
+				3AC2165A179879CA00CA3846 /* Utils.cpp */,
+				3AC2165B179879CA00CA3846 /* Utils.h */,
+			);
+			name = evm;
+			sourceTree = "<group>";
+		};
 		3e44059dcbc2444d65660b9c94e00100 /* imgproc */ = {
 			isa = PBXGroup;
 			children = (
@@ -751,6 +779,11 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				3AC2165E179879D100CA3846 /* evm */,
+				3AC9D42117918306001701D0 /* ofxUVC.h */,
+				3AC9D42217918306001701D0 /* ofxUVC.mm */,
+				3AC9D41E179182FA001701D0 /* UVCCameraControl.h */,
+				3AC9D41F179182FA001701D0 /* UVCCameraControl.m */,
 				3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */,
 				3A2079B4178FE54D008DC421 /* ofxCvFaceRec.h */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
@@ -1118,6 +1151,11 @@
 				e6e21460246219ee9394310f358d02d9 /* PDM.cc in Sources */,
 				e43c5a4ab73c09290f70362d40254f26 /* Tracker.cc in Sources */,
 				3A2079B5178FE54D008DC421 /* ofxCvFaceRec.cpp in Sources */,
+				3AC9D420179182FA001701D0 /* UVCCameraControl.m in Sources */,
+				3AC9D42317918306001701D0 /* ofxUVC.mm in Sources */,
+				3AC21657179879AF00CA3846 /* ofxEvm.cpp in Sources */,
+				3AC2165C179879CA00CA3846 /* Evm.cpp in Sources */,
+				3AC2165D179879CA00CA3846 /* Utils.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
