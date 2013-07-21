@@ -22,7 +22,6 @@ void faceRecognition::setup(){
     faceImage.allocate(finalSize, finalSize, OF_IMAGE_COLOR);
     faceCvColor.allocate(finalSize, finalSize);
     faceCvGray.allocate(finalSize, finalSize);
-    
     faceImage.setUseTexture(false);
     
     string shaderProgram = "#version 120\n \
@@ -43,57 +42,20 @@ void faceRecognition::setup(){
     maskShader.setupShaderFromSource(GL_FRAGMENT_SHADER, shaderProgram);
     maskShader.linkProgram();
     
-    //GUI SETUP
-    uiCanvas = new ofxUICanvas(20.f, camHeight + 85.f, 250.f, 200.f);
-    uiCanvas->setName("datainput");
-    
-    uiFirstName = new ofxUITextInput("FirstName", "First Name", 200.f);
-    uiLastName = new ofxUITextInput("LastName", "Last Name", 200.f);
-    
-    uiCanvas->addLabel("DATA INPUT", OFX_UI_FONT_MEDIUM);
-    uiCanvas->addSpacer();
-    uiCanvas->addWidgetDown(uiFirstName);
-    uiCanvas->addWidgetDown(uiLastName);
-    uiCanvas->addSpacer();
-    
-    ofAddListener(uiCanvas->newGUIEvent,this,&faceRecognition::guiEvent);
-    
-    //EVM GUI
-    uiEvm = new ofxUICanvas(camWidth + 240.f, 25.f, 285.f, 400.f);
-    uiEvm->setName("evm");
-    
-    float length = 280.f;
-    float dim = 20.f;
-    
-    uiEvm->addLabel("EULERIAN VIDEO MAGNIFICATION", OFX_UI_FONT_MEDIUM);
-    uiEvm->addWidgetDown(new ofxUIFPS(OFX_UI_FONT_MEDIUM));
-    uiEvm->addSpacer(length, 2);
-	uiEvm->addLabel("TEMPORAL FILTER", OFX_UI_FONT_MEDIUM);
-    temporal_filter.push_back("Temporal IIR");
-    temporal_filter.push_back("Temporal Ideal (Unimplemented)");
-    uiEvm->addRadio("SELECT TEMPORAL FILTER TYPE", temporal_filter, OFX_UI_ORIENTATION_VERTICAL, dim, dim);
-    
-    uiEvm->addSpacer(length, 2);
-    uiEvm->addLabel("IIR FILTER PARAMETER", OFX_UI_FONT_MEDIUM);
-    uiEvm->addSlider("Amplification", 0, 100, &alpha_iir, length, dim);
-    uiEvm->addSlider("Cut-off Wavelength", 0, 100, &lambda_c_iir, length, dim);
-    uiEvm->addSlider("r1 (Low cut-off?)", 0, 1, &r1, length, dim);
-    uiEvm->addSlider("r2 (High cut-off?)", 0, 1, &r2, length, dim);
-	uiEvm->addSlider("ChromAttenuation", 0, 1, &chromAttenuation_iir, length, dim);
-    
-    uiEvm->addSpacer(length, 2);
-    uiEvm->addLabel("IDEAL FILTER PARAMETER", OFX_UI_FONT_MEDIUM);
-    uiEvm->addSlider("Amplification", 0, 200, &alpha_ideal, length, dim);
-    uiEvm->addSlider("Cut-off Wavelength", 0, 100, &lambda_c_ideal, length, dim);
-    uiEvm->addSlider("Low cut-off", 0, 10, &fl, length, dim);
-    uiEvm->addSlider("High cut-off", 0, 10, &fh, length, dim);
-    uiEvm->addSlider("SamplingRate", 1, 60, &samplingRate, length, dim);
-    uiEvm->addSlider("ChromAttenuation", 0, 1, &chromAttenuation_ideal, length, dim);
-    
-    ofAddListener(uiEvm->newGUIEvent, this, &faceRecognition::guiEvent);
-    
     firstName = "";
     lastName = "";
+    
+    setupgui();
+    
+    imgLocationBuffer = ofBufferFromFile("train.txt");
+    if(imgLocationBuffer.size()){
+        while(!imgLocationBuffer.isLastLine())
+        {
+            string line = imgLocationBuffer.getNextLine();
+            if(!line.empty())
+                imgLocation.push_back(line);
+        }
+    }
     
 #ifdef USE_UVC_CONTROLS
     uvcControl.useCamera(0x5ac, 0x8507, 0x00);
@@ -217,9 +179,17 @@ void faceRecognition::draw(){
 void faceRecognition::saveFaceImage(ofxCvGrayscaleImage img){
     ofImage saveImg;
     saveImg.setFromPixels(img.getPixels(), img.width, img.height, OF_IMAGE_GRAYSCALE);
+    
+    string imgName = "faces/";
+    imgName += uiFirstName->getTextString() + uiLastName->getTextString();
+    imgName += ".jpg";
+    //imgLocationBuffer.append(imgName);
     //PATH FACES _FirstName_LastName . fileFormat
     //Evtl noch XML datei / bzw txt datei mit mehr daten
-    saveImg.saveImage("faces/test.jpg");
+    
+    cout << "saving to: " << imgName << endl;
+    
+    saveImg.saveImage(imgName);
 }
 
 //--------------------------------------------------------------
@@ -241,6 +211,16 @@ void faceRecognition::guiEvent(ofxUIEventArgs &e){
     
     if (name == "Temporal Ideal (Unimplemented)"){
         filter = EVM_TEMPORAL_IDEAL;
+    }
+    
+    if(name == "save"){
+        if(uiFirstName->getTextString().length() > 0 &&
+           uiLastName->getTextString().length() > 0)
+        {
+            saveFaceImage(faceCvGray);
+        }else{
+            uiFeedback->setLabel("enter your name first!");
+        }
     }
     
     cout << "UI event: " << name << endl;
@@ -274,6 +254,62 @@ void faceRecognition::keyReleased(int key){
         uvcExposure = ofClamp(uvcExposure, 0.f, 1.f);
     }
 #endif
+}
+
+//--------------------------------------------------------------
+void faceRecognition::setupgui(){
+    //GUI SETUP
+    uiCanvas = new ofxUICanvas(20.f, camHeight + 85.f, 250.f, 200.f);
+    uiCanvas->setName("datainput");
+    
+    uiFirstName = new ofxUITextInput("FirstName", "First Name", 200.f);
+    uiLastName = new ofxUITextInput("LastName", "Last Name", 200.f);
+    uiFeedback = new ofxUILabel("feedback", "OK", 1);
+    
+    uiCanvas->addLabel("DATA INPUT", OFX_UI_FONT_MEDIUM);
+    uiCanvas->addWidgetDown(uiFeedback);
+    uiCanvas->addSpacer();
+    uiCanvas->addWidgetDown(uiFirstName);
+    uiCanvas->addWidgetDown(uiLastName);
+    uiCanvas->addSpacer();
+    uiCanvas->addButton("save", false);
+    uiCanvas->addSpacer();
+    
+    ofAddListener(uiCanvas->newGUIEvent,this,&faceRecognition::guiEvent);
+    
+    //EVM GUI
+    uiEvm = new ofxUICanvas(camWidth + 240.f, 25.f, 285.f, 400.f);
+    uiEvm->setName("evm");
+    
+    float length = 280.f;
+    float dim = 20.f;
+    
+    uiEvm->addLabel("EULERIAN VIDEO MAGNIFICATION", OFX_UI_FONT_MEDIUM);
+    uiEvm->addWidgetDown(new ofxUIFPS(OFX_UI_FONT_MEDIUM));
+    uiEvm->addSpacer(length, 2);
+	uiEvm->addLabel("TEMPORAL FILTER", OFX_UI_FONT_MEDIUM);
+    temporal_filter.push_back("Temporal IIR");
+    temporal_filter.push_back("Temporal Ideal (Unimplemented)");
+    uiEvm->addRadio("SELECT TEMPORAL FILTER TYPE", temporal_filter, OFX_UI_ORIENTATION_VERTICAL, dim, dim);
+    
+    uiEvm->addSpacer(length, 2);
+    uiEvm->addLabel("IIR FILTER PARAMETER", OFX_UI_FONT_MEDIUM);
+    uiEvm->addSlider("Amplification", 0, 100, &alpha_iir, length, dim);
+    uiEvm->addSlider("Cut-off Wavelength", 0, 100, &lambda_c_iir, length, dim);
+    uiEvm->addSlider("r1 (Low cut-off?)", 0, 1, &r1, length, dim);
+    uiEvm->addSlider("r2 (High cut-off?)", 0, 1, &r2, length, dim);
+	uiEvm->addSlider("ChromAttenuation", 0, 1, &chromAttenuation_iir, length, dim);
+    
+    uiEvm->addSpacer(length, 2);
+    uiEvm->addLabel("IDEAL FILTER PARAMETER", OFX_UI_FONT_MEDIUM);
+    uiEvm->addSlider("Amplification", 0, 200, &alpha_ideal, length, dim);
+    uiEvm->addSlider("Cut-off Wavelength", 0, 100, &lambda_c_ideal, length, dim);
+    uiEvm->addSlider("Low cut-off", 0, 10, &fl, length, dim);
+    uiEvm->addSlider("High cut-off", 0, 10, &fh, length, dim);
+    uiEvm->addSlider("SamplingRate", 1, 60, &samplingRate, length, dim);
+    uiEvm->addSlider("ChromAttenuation", 0, 1, &chromAttenuation_ideal, length, dim);
+    
+    ofAddListener(uiEvm->newGUIEvent, this, &faceRecognition::guiEvent);
 }
 
 //--------------------------------------------------------------

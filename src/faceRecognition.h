@@ -25,6 +25,7 @@ public:
     void update();
     void draw();
     void exit();
+    void setupgui();
 
     void keyPressed  (int key);
     void keyReleased(int key);
@@ -92,6 +93,11 @@ public:
     ofxUICanvas *uiCanvas;
     ofxUITextInput *uiFirstName;
     ofxUITextInput *uiLastName;
+    ofxUILabel *uiFeedback;
     string firstName, lastName;
     ofxUICanvas *uiEvm;
+    
+    //face db
+    ofBuffer imgLocationBuffer;
+    vector<string> imgLocation;
 };
