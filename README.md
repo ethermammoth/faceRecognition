@@ -3,9 +3,13 @@ faceRecognition
 Using openFrameworks including the following addons:
 
 ofxCv -> https://github.com/kylemcdonald/ofxCv
+
 ofxFaceTracker -> https://github.com/kylemcdonald/ofxFaceTracker
+
 ofxUI -> https://github.com/rezaali/ofxUI
+
 face Recognition -> http://svn.roberttwomey.com/of/faceRecTester/ (http://roberttwomey.com)
+
 ofxEvm -> https://github.com/yusuketomoto/ofxEvm
 
 
