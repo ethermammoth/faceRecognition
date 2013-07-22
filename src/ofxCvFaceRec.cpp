@@ -221,8 +221,8 @@ int ofxCvFaceRec::findNearestNeighbor(float * projectedTestFace) {
         float d_i =	projectedTestFace[i] -
             projectedTrainFaceMat->data.fl[iTrain*nEigens + i];
 
-            distSq += d_i*d_i; // Euclidean
-
+            //distSq += d_i*d_i; // Euclidean
+            distSq += d_i*d_i/eigenValMat->data.fl[i]; //Mahalanobis
       }
       //sprintf(Buf,"%03d  ->  %f",iTrain+1,distSq);
       //Out->add(Buf);

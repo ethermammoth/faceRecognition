@@ -6,7 +6,7 @@ void faceRecognition::setup(){
     ofEnableAlphaBlending();
     camWidth = 640;
     camHeight = 480;
-    
+    evmEnable = false;
     //Size of the Image used for recognition (Square)
     finalSize = 150;
     
@@ -46,16 +46,10 @@ void faceRecognition::setup(){
     lastName = "";
     
     setupgui();
+    loadFaceImages();
     
-    imgLocationBuffer = ofBufferFromFile("train.txt");
-    if(imgLocationBuffer.size()){
-        while(!imgLocationBuffer.isLastLine())
-        {
-            string line = imgLocationBuffer.getNextLine();
-            if(!line.empty())
-                imgLocation.push_back(line);
-        }
-    }
+    person = -1;
+    recPercentage = 0;
     
 #ifdef USE_UVC_CONTROLS
     uvcControl.useCamera(0x5ac, 0x8507, 0x00);
@@ -66,10 +60,11 @@ void faceRecognition::setup(){
 //--------------------------------------------------------------
 void faceRecognition::update(){
     //update EVM parameters
-    evm.setTemporalFilter(filter);
-    evm.setParamsIIR(alpha_iir, lambda_c_iir, r1, r2, chromAttenuation_iir);
-    evm.setParamsIdeal(alpha_ideal, lambda_c_ideal, fl, fh, samplingRate, chromAttenuation_ideal);
-    
+    if(evmEnable){
+        evm.setTemporalFilter(filter);
+        evm.setParamsIIR(alpha_iir, lambda_c_iir, r1, r2, chromAttenuation_iir);
+        evm.setParamsIdeal(alpha_ideal, lambda_c_ideal, fl, fh, samplingRate, chromAttenuation_ideal);
+    }
     
     cam.update();
     if(cam.isFrameNew()) {
@@ -128,11 +123,19 @@ void faceRecognition::update(){
             faceImage.resize(finalSize, finalSize);
             
             faceCvColor.setFromPixels(faceImage.getPixels(), faceImage.getWidth(), faceImage.getHeight());
-            faceCvGray = faceCvColor;
-            //faceCvGray.contrastStretch();            
+            faceCvGray = faceCvColor;           
             cvEqualizeHist(faceCvGray.getCvImage(), faceCvGray.getCvImage());
             
-            evm.update(toCv(faceImage));
+            if(evmEnable)
+                evm.update(toCv(faceImage));
+            
+            if(recognizer.isTrained() && doRecognize){
+                person = -1;
+                person = recognizer.recognize(faceCvGray);
+                if(person != -1){
+                    recPercentage = recognizer.getLeastDistSq();
+                }
+            }
         }
     }
 }
@@ -158,20 +161,45 @@ void faceRecognition::draw(){
     ofSetColor(255, 0, 0);
     ofRect(camWidth + 50, 250, 170, 170);
     
-    ofSetColor(255, 255, 255);
-    ofDrawBitmapStringHighlight("MOTION AMPLIFIED", camWidth + 50, 440);
-    ofSetColor(255, 0, 0);
-    ofRect(camWidth + 50, 450, 170, 170);
+    if(evmEnable){
+      ofSetColor(255, 255, 255);
+        ofDrawBitmapStringHighlight("MOTION AMPLIFIED", camWidth + 50, 440);
+        ofSetColor(255, 0, 0);
+        ofRect(camWidth + 50, 450, 170, 170);
+    }
     
     if(faceFound) {
         ofSetColor(255, 255, 255);
         faceCvColor.draw(camWidth + 60, 60);
         faceCvGray.draw(camWidth + 60, 260);
-        evm.draw(camWidth + 60, 460);
+        if(evmEnable)
+            evm.draw(camWidth + 60, 460);
+        
         ofPushMatrix();
         ofTranslate(20.f, 60.f);
         camTracker.draw();
         ofPopMatrix();
+    }
+    
+    if(person != -1){
+        ofDrawBitmapStringHighlight("Person found: " + ofToString(person) + " % " + ofToString(recPercentage), 400.f, camHeight + 85.f);
+        recognizer.drawPerson(person, 400, camHeight + 95);
+    }
+    
+}
+//--------------------------------------------------------------
+void faceRecognition::loadFaceImages(){
+    string line;
+    ifstream fin(ofToDataPath(filename).c_str());
+    if (fin.is_open())
+    {
+        while ( fin.good() )
+        {
+            getline (fin,line);
+            cout << line << endl;
+            trainingImages.push_back(line);
+        }
+        fin.close();
     }
 }
 
@@ -180,16 +208,29 @@ void faceRecognition::saveFaceImage(ofxCvGrayscaleImage img){
     ofImage saveImg;
     saveImg.setFromPixels(img.getPixels(), img.width, img.height, OF_IMAGE_GRAYSCALE);
     
-    string imgName = "faces/";
-    imgName += uiFirstName->getTextString() + uiLastName->getTextString();
-    imgName += ".jpg";
-    //imgLocationBuffer.append(imgName);
-    //PATH FACES _FirstName_LastName . fileFormat
+    int numFound = 0;
+    string imgName = uiFirstName->getTextString() + "_" + uiLastName->getTextString() + "_" + ofToString(numFound) + ".jpg";
+    
+    for(int x=0; x<trainingImages.size(); x++){
+        if(trainingImages[x] == imgName){
+            numFound++;
+            imgName = uiFirstName->getTextString() + "_" + uiLastName->getTextString() + "_" + ofToString(numFound) + ".jpg";
+        }            
+    }
+    
+    trainingImages.push_back(imgName);
+    //FirstName_LastName . fileFormat
     //Evtl noch XML datei / bzw txt datei mit mehr daten
+    ofstream fout(ofToDataPath(filename).c_str(), fstream::in | fstream::out | fstream::app);
+    fout << imgName << endl;
+    fout.close();
     
-    cout << "saving to: " << imgName << endl;
+    string saveFileName = "faces/";
+    saveFileName += imgName;
     
-    saveImg.saveImage(imgName);
+    cout << "saving to: " << saveFileName << endl;
+    
+    saveImg.saveImage(saveFileName);
 }
 
 //--------------------------------------------------------------
@@ -209,21 +250,41 @@ void faceRecognition::guiEvent(ofxUIEventArgs &e){
         filter = EVM_TEMPORAL_IIR;
     }
     
-    if (name == "Temporal Ideal (Unimplemented)"){
+    if(name == "Temporal Ideal (Unimplemented)"){
         filter = EVM_TEMPORAL_IDEAL;
     }
     
+    if(name == "Enable EVM"){
+        uiEvm->toggleVisible();
+    }
+    
     if(name == "save"){
-        if(uiFirstName->getTextString().length() > 0 &&
-           uiLastName->getTextString().length() > 0)
+        ofxUIButton *btn = (ofxUIButton *) e.widget;
+        bool pressed = btn->getValue();
+        if(uiFirstName->getTextString().length() == 0 &&
+           uiLastName->getTextString().length() == 0 &&
+           pressed)
         {
+            uiFeedback->setLabel("Enter name first!");
+        }else if(!pressed){
             saveFaceImage(faceCvGray);
-        }else{
-            uiFeedback->setLabel("enter your name first!");
+            uiFeedback->setLabel("Image saved!");
         }
     }
     
-    cout << "UI event: " << name << endl;
+    if(name == "learn"){
+        ofxUIButton *btn = (ofxUIButton *) e.widget;
+        bool pressed = btn->getValue();
+        
+        if(!pressed && !recognizer.isTrained()){
+            uiFeedback->setLabel("Learning training data!");
+            recognizer.learn();
+        }else{
+            uiFeedback->setLabel("Allready trained!");
+        }
+    }
+    
+    cout << "UI event: " << name << " kind: " << kind << endl;
 }
 
 //--------------------------------------------------------------
@@ -265,6 +326,8 @@ void faceRecognition::setupgui(){
     uiFirstName = new ofxUITextInput("FirstName", "First Name", 200.f);
     uiLastName = new ofxUITextInput("LastName", "Last Name", 200.f);
     uiFeedback = new ofxUILabel("feedback", "OK", 1);
+    uiEnableEvm = new ofxUIToggle("Enable EVM", &evmEnable, 20.f, 20.f);
+    uiDoRecognize = new ofxUIToggle("Do Recognize", &doRecognize, 20.f, 20.f);
     
     uiCanvas->addLabel("DATA INPUT", OFX_UI_FONT_MEDIUM);
     uiCanvas->addWidgetDown(uiFeedback);
@@ -274,6 +337,10 @@ void faceRecognition::setupgui(){
     uiCanvas->addSpacer();
     uiCanvas->addButton("save", false);
     uiCanvas->addSpacer();
+    uiCanvas->addWidgetDown(uiEnableEvm);
+    uiCanvas->addSpacer();
+    uiCanvas->addButton("learn", false);
+    uiCanvas->addWidgetRight(uiDoRecognize);
     
     ofAddListener(uiCanvas->newGUIEvent,this,&faceRecognition::guiEvent);
     
@@ -310,6 +377,8 @@ void faceRecognition::setupgui(){
     uiEvm->addSlider("ChromAttenuation", 0, 1, &chromAttenuation_ideal, length, dim);
     
     ofAddListener(uiEvm->newGUIEvent, this, &faceRecognition::guiEvent);
+    
+    uiEvm->toggleVisible();
 }
 
 //--------------------------------------------------------------

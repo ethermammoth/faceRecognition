@@ -38,6 +38,7 @@ public:
     void gotMessage(ofMessage msg);
 
     void saveFaceImage(ofxCvGrayscaleImage img);
+    void loadFaceImages();
 
     void guiEvent(ofxUIEventArgs &e);
     
@@ -94,10 +95,16 @@ public:
     ofxUITextInput *uiFirstName;
     ofxUITextInput *uiLastName;
     ofxUILabel *uiFeedback;
+    ofxUIToggle *uiEnableEvm;
+    ofxUIToggle *uiDoRecognize;
     string firstName, lastName;
     ofxUICanvas *uiEvm;
+    bool evmEnable;
+    bool doRecognize;
     
     //face db
-    ofBuffer imgLocationBuffer;
-    vector<string> imgLocation;
+    int person;
+    double recPercentage;
+    vector<string> trainingImages;
+    const string filename = "train.txt";
 };
