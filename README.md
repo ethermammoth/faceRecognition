@@ -25,15 +25,27 @@ Eulerian Video Magnification is working but still needs a lot of work to detect 
 
 This is where i want to go in the future, maybe ill start a new project folder for this or continue here.
 Any suggestions or collaboration is welcome. Just drop me a mail: rasmus at schnitzel dot dk
-Planned implementation 
+
+Planned implementation
+
 Soft Biometrics
+
 -Gender
+
 -Eye colour
+
 -Race
+
 -Age
+
 -Agitation level (maybe)
 
+
 Body Metrics
+
 -Size / Height
+
 -Weight
+
 -Clothing colour
+
