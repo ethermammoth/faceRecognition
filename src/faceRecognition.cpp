@@ -49,7 +49,10 @@ void faceRecognition::setup(){
     loadFaceImages();
     
     person = -1;
-    recPercentage = 0;
+    bestPerson = -1;
+    recLeastSquareDist = std::numeric_limits<double>::max();
+    faceNewFound = true;
+    faceId = 0;
     
 #ifdef USE_UVC_CONTROLS
     uvcControl.useCamera(0x5ac, 0x8507, 0x00);
@@ -81,7 +84,11 @@ void faceRecognition::update(){
         
         if(faceFound)
         {
-            
+            if(!faceNewFound)
+            {
+                faceId++;
+                faceNewFound = true;
+            }
             //------------------
             // Here we start by masking the face out of the camera image
             //------------------
@@ -133,9 +140,17 @@ void faceRecognition::update(){
                 person = -1;
                 person = recognizer.recognize(faceCvGray);
                 if(person != -1){
-                    recPercentage = recognizer.getLeastDistSq();
+                    double lsd = recognizer.getLeastDistSq();
+                    if(lsd < recLeastSquareDist){
+                        recLeastSquareDist = lsd;
+                        bestPerson = person;
+                    }
                 }
             }
+        }else{
+            faceNewFound = false;
+            recLeastSquareDist = std::numeric_limits<double>::max();
+            bestPerson = -1;
         }
     }
 }
@@ -177,13 +192,16 @@ void faceRecognition::draw(){
         
         ofPushMatrix();
         ofTranslate(20.f, 60.f);
-        camTracker.draw();
+        camTracker.draw(true);
         ofPopMatrix();
+        
+        ofDrawBitmapStringHighlight(" ID: " + ofToString(faceId), faceBB.x, faceBB.y);
     }
     
-    if(person != -1){
-        ofDrawBitmapStringHighlight("Person found: " + ofToString(person) + " % " + ofToString(recPercentage), 400.f, camHeight + 85.f);
-        recognizer.drawPerson(person, 400, camHeight + 95);
+    if(person != -1 && faceFound){
+        ofDrawBitmapStringHighlight("Person found: " + ofToString(person) + " Best Match " + ofToString(bestPerson), 400.f, camHeight + 85.f);
+        ofDrawBitmapStringHighlight("Name: " + getPersonName(bestPerson), faceBB.x, faceBB.y + 20.f);
+        recognizer.drawPerson(bestPerson, 400, camHeight + 95);
     }
     
 }
@@ -231,6 +249,14 @@ void faceRecognition::saveFaceImage(ofxCvGrayscaleImage img){
     cout << "saving to: " << saveFileName << endl;
     
     saveImg.saveImage(saveFileName);
+}
+
+//--------------------------------------------------------------
+string faceRecognition::getPersonName(int _id){
+    string name = trainingImages[_id];
+    //TODO: split up string
+    
+    return name;
 }
 
 //--------------------------------------------------------------

@@ -42,12 +42,16 @@ public:
 
     void guiEvent(ofxUIEventArgs &e);
     
+    string getPersonName(int _id);
+    
     ofVideoGrabber cam;
     ofxFaceTrackerThreaded camTracker;
 
     int camWidth, camHeight;
     int finalSize;
     bool faceFound;
+    bool faceNewFound;
+    int faceId;
 
     ofPolyline faceOutline;
     ofRectangle faceBB;
@@ -104,7 +108,8 @@ public:
     
     //face db
     int person;
-    double recPercentage;
+    int bestPerson;
+    double recLeastSquareDist;
     vector<string> trainingImages;
     const string filename = "train.txt";
 };
