@@ -15,6 +15,7 @@
 		24735cd2e138dc5c1f0a10855fcd74db /* ofxFaceTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 185bb9b07b8db74bd2d3211fada3364b /* ofxFaceTracker.cpp */; };
 		250a95ba26587be85db0a353e6e1dea2 /* ofxCvColorImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ce9c7160245b19131dae61282ee6cb53 /* ofxCvColorImage.cpp */; };
 		3A2079B5178FE54D008DC421 /* ofxCvFaceRec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */; };
+		3A32F2CA179E6DD50083984D /* ofxFaceTrackerResult.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A32F2C9179E6DD50083984D /* ofxFaceTrackerResult.cpp */; };
 		3AC21657179879AF00CA3846 /* ofxEvm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AC21655179879AF00CA3846 /* ofxEvm.cpp */; };
 		3AC2165C179879CA00CA3846 /* Evm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AC21658179879CA00CA3846 /* Evm.cpp */; };
 		3AC2165D179879CA00CA3846 /* Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AC2165A179879CA00CA3846 /* Utils.cpp */; };
@@ -135,6 +136,8 @@
 		3769b74412282aefebdd8c8622b97be5 /* Patch.cc */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Patch.cc; path = ../../../addons/ofxFaceTracker/libs/FaceTracker/src/lib/Patch.cc; sourceTree = SOURCE_ROOT; };
 		3A2079B3178FE54D008DC421 /* ofxCvFaceRec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxCvFaceRec.cpp; sourceTree = "<group>"; };
 		3A2079B4178FE54D008DC421 /* ofxCvFaceRec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxCvFaceRec.h; sourceTree = "<group>"; };
+		3A32F2C8179E6DC20083984D /* ofxFaceTrackerResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxFaceTrackerResult.h; sourceTree = "<group>"; };
+		3A32F2C9179E6DD50083984D /* ofxFaceTrackerResult.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxFaceTrackerResult.cpp; sourceTree = "<group>"; };
 		3AC21655179879AF00CA3846 /* ofxEvm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxEvm.cpp; sourceTree = "<group>"; };
 		3AC21656179879AF00CA3846 /* ofxEvm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxEvm.h; sourceTree = "<group>"; };
 		3AC21658179879CA00CA3846 /* Evm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Evm.cpp; sourceTree = "<group>"; };
@@ -789,6 +792,8 @@
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* faceRecognition.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* faceRecognition.h */,
+				3A32F2C8179E6DC20083984D /* ofxFaceTrackerResult.h */,
+				3A32F2C9179E6DD50083984D /* ofxFaceTrackerResult.cpp */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -1156,6 +1161,7 @@
 				3AC21657179879AF00CA3846 /* ofxEvm.cpp in Sources */,
 				3AC2165C179879CA00CA3846 /* Evm.cpp in Sources */,
 				3AC2165D179879CA00CA3846 /* Utils.cpp in Sources */,
+				3A32F2CA179E6DD50083984D /* ofxFaceTrackerResult.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

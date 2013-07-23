@@ -4,25 +4,16 @@
 void faceRecognition::setup(){
     
     ofEnableAlphaBlending();
+    ofSetVerticalSync(true);
     camWidth = 640;
     camHeight = 480;
     evmEnable = false;
     //Size of the Image used for recognition (Square)
     finalSize = 150;
     
-    faceFound = false;
     cam.initGrabber(camWidth, camHeight);
-    camTracker.setup();
     
-    //------------------
-    // Allocate Images
-    //------------------
-    maskFbo.allocate(camWidth, camHeight, GL_RGB);
-    resultFbo.allocate(camWidth, camHeight, GL_RGB);
-    faceImage.allocate(finalSize, finalSize, OF_IMAGE_COLOR);
-    faceCvColor.allocate(finalSize, finalSize);
-    faceCvGray.allocate(finalSize, finalSize);
-    faceImage.setUseTexture(false);
+    
     
     string shaderProgram = "#version 120\n \
     #extension GL_ARB_texture_rectangle : enable\n \
@@ -49,10 +40,16 @@ void faceRecognition::setup(){
     loadFaceImages();
     
     person = -1;
-    bestPerson = -1;
-    recLeastSquareDist = std::numeric_limits<double>::max();
-    faceNewFound = true;
-    faceId = 0;
+    faceIteration = 0;
+    
+    //create first tracker
+    camTracker.setup();
+    
+    //result
+    faceResult.setup(camWidth, camHeight, finalSize);
+    
+    eyeColor = eyeColor.forestGreen;
+    eyeImage.allocate(camWidth, camHeight, OF_IMAGE_GRAYSCALE);
     
 #ifdef USE_UVC_CONTROLS
     uvcControl.useCamera(0x5ac, 0x8507, 0x00);
@@ -78,81 +75,141 @@ void faceRecognition::update(){
          * 2) Get the Face Img
          * 3) Convert to Grayscale and Histogram equalize
          */
+        bool faceFound = findFace(cam.getPixelsRef(), faceResult);
+       
         
-        camTracker.update(toCv(cam));
-        faceFound = camTracker.getFound();
+        /*
+         * PART 2 Recognition
+         *
+         */
         
-        if(faceFound)
-        {
-            if(!faceNewFound)
-            {
-                faceId++;
-                faceNewFound = true;
-            }
-            //------------------
-            // Here we start by masking the face out of the camera image
-            //------------------
-            faceOutline = camTracker.getImageFeature(ofxFaceTracker::FACE_OUTLINE);
-            faceBB = faceOutline.getBoundingBox();
-            faceSolid.clear();
-            
-            for(int i=0; i < faceOutline.getVertices().size(); i++) {
-                if(i == 0) {
-                    faceSolid.newSubPath();
-                    faceSolid.moveTo(faceOutline.getVertices()[i]);
-                }else{
-                    faceSolid.lineTo(faceOutline.getVertices()[i]);
+        if(recognizer.isTrained() && doRecognize){
+            person = -1;
+            person = recognizer.recognize(faceResult.faceCvGray);
+            faceResult.person = person;
+            if(person != -1){
+                double lsd = recognizer.getLeastDistSq();
+                if(lsd < faceResult.recLeastSquareDist){
+                    faceResult.recLeastSquareDist = lsd;
+                    faceResult.bestPerson = person;
                 }
             }
-            
-            faceSolid.close();
-            
-            maskFbo.begin();
-            ofClear(0, 255);
-            faceSolid.draw();
-            maskFbo.end();
-            
-            resultFbo.begin();
-            ofClear(0, 0, 0, 0);
-            maskShader.begin();
-            maskShader.setUniformTexture("maskTex", maskFbo.getTextureReference(), 1);
-            cam.draw(0, 0);
-            maskShader.end();
-            resultFbo.end();
-            
-            //------------------
-            // Resulting Image from FBO cropped and resized
-            //------------------
-            ofPixels pix;
-            resultFbo.readToPixels(pix);            
-            faceImage.setFromPixels(pix);
-            faceImage.crop(faceBB.position.x, faceBB.position.y, faceBB.width, faceBB.height);
-            faceImage.resize(finalSize, finalSize);
-            
-            faceCvColor.setFromPixels(faceImage.getPixels(), faceImage.getWidth(), faceImage.getHeight());
-            faceCvGray = faceCvColor;           
-            cvEqualizeHist(faceCvGray.getCvImage(), faceCvGray.getCvImage());
-            
-            if(evmEnable)
-                evm.update(toCv(faceImage));
-            
-            if(recognizer.isTrained() && doRecognize){
-                person = -1;
-                person = recognizer.recognize(faceCvGray);
-                if(person != -1){
-                    double lsd = recognizer.getLeastDistSq();
-                    if(lsd < recLeastSquareDist){
-                        recLeastSquareDist = lsd;
-                        bestPerson = person;
-                    }
-                }
-            }
-        }else{
-            faceNewFound = false;
-            recLeastSquareDist = std::numeric_limits<double>::max();
-            bestPerson = -1;
         }
+        
+        /*
+         * 
+         *
+         */
+        
+        if(evmEnable)
+            evm.update(toCv(faceResult.faceImage));
     }
+}
+
+
+//----- Finding the face with face tracker, copying etc. -----
+bool faceRecognition::findFace(ofImage img, ofxFaceTrackerResult &result){
+        
+    camTracker.update(toCv(img));
+    bool _faceFound = camTracker.getFound();
+    
+    if(_faceFound)
+    {
+        result.faceFound = true;
+        if(!result.faceNewFound)
+        {
+            result.faceId++;
+            result.faceNewFound = true;
+        }
+        
+        if(!result.initialized)
+            result.setup(camWidth, camHeight, finalSize);
+        
+        //------------------
+        // Here we start by masking the face out of the camera image
+        //------------------
+        result.faceOutline = camTracker.getImageFeature(ofxFaceTracker::FACE_OUTLINE);
+        result.faceBB = result.faceOutline.getBoundingBox();
+        result.faceSolid.clear();
+        
+        for(int i=0; i < result.faceOutline.getVertices().size(); i++) {
+            if(i == 0) {
+                result.faceSolid.newSubPath();
+                result.faceSolid.moveTo(result.faceOutline.getVertices()[i]);
+            }else{
+                result.faceSolid.lineTo(result.faceOutline.getVertices()[i]);
+            }
+        }
+        
+        result.faceSolid.close();
+        
+        result.maskFbo.begin();
+        ofClear(0, 255);
+        result.faceSolid.draw();
+        result.maskFbo.end();
+        
+        result.resultFbo.begin();
+        ofClear(0, 0, 0, 0);
+        maskShader.begin();
+        maskShader.setUniformTexture("maskTex", result.maskFbo.getTextureReference(), 1);
+        img.draw(0, 0);
+        maskShader.end();
+        result.resultFbo.end();
+        
+        //------------------
+        // Resulting Image from FBO cropped and resized
+        //------------------
+        ofPixels pix;
+        result.resultFbo.readToPixels(pix);
+        result.faceImage.setFromPixels(pix);
+        result.faceImage.crop(result.faceBB.position.x, result.faceBB.position.y, result.faceBB.width, result.faceBB.height);
+        result.faceImage.resize(finalSize, finalSize);
+        
+        result.faceCvColor.setFromPixels(result.faceImage.getPixels(), result.faceImage.getWidth(), result.faceImage.getHeight());
+        result.faceCvGray = result.faceCvColor;
+        cvEqualizeHist(result.faceCvGray.getCvImage(), result.faceCvGray.getCvImage());
+        
+        //update cam image (use same fbo)
+        /*
+        result.maskFbo.begin();
+        ofClear(0, 255);
+        img.draw(0, 0);
+        ofRect(result.faceBB.x - 10.f, result.faceBB.y - 10.f, result.faceBB.width + 20.f, result.faceBB.height + 20.f);
+        result.maskFbo.end();
+        
+        pix.clear();
+        result.maskFbo.readToPixels(pix);
+        result.camResult.setFromPixels(pix);
+        */
+        findEyeColor(img);
+        
+    }else{
+        result.faceFound = false;
+        result.faceNewFound = false;
+        result.recLeastSquareDist = std::numeric_limits<double>::max();
+        result.bestPerson = -1;
+    }
+    
+    return _faceFound;
+}
+
+void faceRecognition::findEyeColor(ofImage img){
+    
+    //img is the complete cam image
+    ofPolyline leftEye = camTracker.getImageFeature(ofxFaceTracker::LEFT_EYE);
+    ofRectangle leftBB = leftEye.getBoundingBox();
+    
+    //crop out first eye
+    ofPoint center = leftBB.getCenter();
+    img.crop(leftBB.x, leftBB.y, leftBB.width, leftBB.height);
+    
+    // Eye Color
+    // 1) Copy eye img
+    // 2) Find pupil
+    // 3) Find outer radius
+    // 4) Sample Color
+    // - maybe also thresholding by color - seperate and find
+    eyeImage = img;
 }
 
 //--------------------------------------------------------------
@@ -161,7 +218,7 @@ void faceRecognition::draw(){
     ofBackgroundGradient(ofColor(64), ofColor(0));
     ofSetColor(255, 255, 255);
     
-    ofDrawBitmapStringHighlight("CAM STREAM", 20.f, 40.f);
+    ofDrawBitmapStringHighlight("CAM STREAM " + ofToString(ofGetFrameRate()), 20.f, 40.f);
     ofSetColor(255, 0, 0);
     ofRect(10.f, 50.f, camWidth + 20.f, camHeight + 20.f);
     ofSetColor(255, 255, 255);
@@ -183,25 +240,28 @@ void faceRecognition::draw(){
         ofRect(camWidth + 50, 450, 170, 170);
     }
     
-    if(faceFound) {
+    
+    if(faceResult.faceFound) {
         ofSetColor(255, 255, 255);
-        faceCvColor.draw(camWidth + 60, 60);
-        faceCvGray.draw(camWidth + 60, 260);
+        faceResult.faceCvColor.draw(camWidth + 60, 60);
+        faceResult.faceCvGray.draw(camWidth + 60, 260);
+        
         if(evmEnable)
             evm.draw(camWidth + 60, 460);
         
+        eyeImage.draw(20.f, 60.f);
         ofPushMatrix();
         ofTranslate(20.f, 60.f);
-        camTracker.draw(true);
+        camTracker.draw();
         ofPopMatrix();
         
-        ofDrawBitmapStringHighlight(" ID: " + ofToString(faceId), faceBB.x, faceBB.y);
+        ofDrawBitmapStringHighlight(" ID: " + ofToString(faceResult.faceId), faceResult.faceBB.x, faceResult.faceBB.y);
     }
     
-    if(person != -1 && faceFound){
-        ofDrawBitmapStringHighlight("Person found: " + ofToString(person) + " Best Match " + ofToString(bestPerson), 400.f, camHeight + 85.f);
-        ofDrawBitmapStringHighlight("Name: " + getPersonName(bestPerson), faceBB.x, faceBB.y + 20.f);
-        recognizer.drawPerson(bestPerson, 400, camHeight + 95);
+    if(person != -1 && faceResult.faceFound){
+        ofDrawBitmapStringHighlight("Person found: " + ofToString(faceResult.person) + " Best Match " + ofToString(faceResult.bestPerson), 400.f, camHeight + 85.f);
+        ofDrawBitmapStringHighlight("Name: " + getPersonName(faceResult.bestPerson), faceResult.faceBB.x, faceResult.faceBB.y + 20.f);
+        recognizer.drawPerson(faceResult.bestPerson, 400, camHeight + 95);
     }
     
 }
@@ -254,7 +314,16 @@ void faceRecognition::saveFaceImage(ofxCvGrayscaleImage img){
 //--------------------------------------------------------------
 string faceRecognition::getPersonName(int _id){
     string name = trainingImages[_id];
+    string firstName = "";
+    string lastName = "";
     //TODO: split up string
+    string::size_type position = name.find('_');
+    firstName = name.substr(0, position);
+    
+    string::size_type position2 = name.rfind('_');
+    lastName = name.substr(position + 1, name.length() - position2);
+    
+    name = firstName + " " + lastName;
     
     return name;
 }
@@ -263,14 +332,6 @@ string faceRecognition::getPersonName(int _id){
 void faceRecognition::guiEvent(ofxUIEventArgs &e){
     string name = e.widget->getName();
 	int kind = e.widget->getKind();
-    
-    if(name == "FirstName"){
-        firstName = uiFirstName->getTextString();
-    }
-    
-    if(name == "LastName"){
-        lastName = uiLastName->getTextString();
-    }
     
     if(name == "Temporal IIR"){
         filter = EVM_TEMPORAL_IIR;
@@ -293,7 +354,7 @@ void faceRecognition::guiEvent(ofxUIEventArgs &e){
         {
             uiFeedback->setLabel("Enter name first!");
         }else if(!pressed){
-            saveFaceImage(faceCvGray);
+            saveFaceImage(faceResult.faceCvGray);
             uiFeedback->setLabel("Image saved!");
         }
     }
@@ -320,9 +381,6 @@ void faceRecognition::keyPressed(int key){
 
 //--------------------------------------------------------------
 void faceRecognition::keyReleased(int key){
-    if(key == OF_KEY_DOWN){
-        saveFaceImage(faceCvGray);
-    }
 #ifdef USE_UVC_CONTROLS    
     if(key == OF_KEY_UP){
         uvcControl.setAutoExposure(!uvcControl.getExposure());

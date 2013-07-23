@@ -4,17 +4,13 @@
 #include "ofxCv.h"
 using namespace ofxCv;
 using namespace cv;
-
 #include "ofxFaceTrackerThreaded.h"
 #include "ofxCvFaceRec.h"
-
 #include "ofxUI.h"
-
 //Camera Settings OSX only
 #include "ofxUVC.h"
-
 #include "ofxEvm.h"
-
+#include "ofxFaceTrackerResult.h"
 //#define USE_UVC_CONTROLS
 
 
@@ -39,6 +35,9 @@ public:
 
     void saveFaceImage(ofxCvGrayscaleImage img);
     void loadFaceImages();
+    
+    bool findFace(ofImage img, ofxFaceTrackerResult &result);
+    void findEyeColor(ofImage img);
 
     void guiEvent(ofxUIEventArgs &e);
     
@@ -49,23 +48,15 @@ public:
 
     int camWidth, camHeight;
     int finalSize;
-    bool faceFound;
-    bool faceNewFound;
-    int faceId;
-
-    ofPolyline faceOutline;
-    ofRectangle faceBB;
-    ofPath faceSolid;
-    ofFbo maskFbo, resultFbo;
-    ofShader maskShader;
-
-    ofImage faceImage;
     
-    int smoothFactor;
-
-    //CV
-    ofxCvColorImage faceCvColor;
-    ofxCvGrayscaleImage faceCvGray;
+    //face tracking results
+    int faceIteration;
+    ofxFaceTrackerResult faceResult;
+    ofShader maskShader;
+    
+    ofColor eyeColor;
+    ofImage eyeImage;
+    
     //Main rec
     ofxCvFaceRec recognizer;
     
@@ -108,8 +99,6 @@ public:
     
     //face db
     int person;
-    int bestPerson;
-    double recLeastSquareDist;
     vector<string> trainingImages;
     const string filename = "train.txt";
 };
