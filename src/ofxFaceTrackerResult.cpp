@@ -16,6 +16,8 @@ ofxFaceTrackerResult::ofxFaceTrackerResult(){
     faceNewFound = true;
     faceId = 0;
     initialized = false;
+    eyeFound = false;
+    skinFound = false;
 }
 
 void ofxFaceTrackerResult::setup(int camWidth, int camHeight, int finalSize){
@@ -25,5 +27,6 @@ void ofxFaceTrackerResult::setup(int camWidth, int camHeight, int finalSize){
     faceCvColor.allocate(finalSize, finalSize);
     faceCvGray.allocate(finalSize, finalSize);
     faceImage.setUseTexture(false);
+    eyeImage.allocate(camWidth, camHeight, OF_IMAGE_GRAYSCALE);
     initialized = true;
 }

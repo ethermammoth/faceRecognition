@@ -4,7 +4,9 @@
 void faceRecognition::setup(){
     
     ofEnableAlphaBlending();
+    ofSetFrameRate(60);
     ofSetVerticalSync(true);
+    ofSetDrawBitmapMode(OF_BITMAPMODE_MODEL_BILLBOARD);
     camWidth = 640;
     camHeight = 480;
     evmEnable = false;
@@ -38,9 +40,7 @@ void faceRecognition::setup(){
     
     setupgui();
     loadFaceImages();
-    
     person = -1;
-    faceIteration = 0;
     
     //create first tracker
     camTracker.setup();
@@ -48,8 +48,8 @@ void faceRecognition::setup(){
     //result
     faceResult.setup(camWidth, camHeight, finalSize);
     
-    eyeColor = eyeColor.forestGreen;
-    eyeImage.allocate(camWidth, camHeight, OF_IMAGE_GRAYSCALE);
+    //load recognition data
+    recognizer.learn();
     
 #ifdef USE_UVC_CONTROLS
     uvcControl.useCamera(0x5ac, 0x8507, 0x00);
@@ -76,7 +76,6 @@ void faceRecognition::update(){
          * 3) Convert to Grayscale and Histogram equalize
          */
         bool faceFound = findFace(cam.getPixelsRef(), faceResult);
-       
         
         /*
          * PART 2 Recognition
@@ -97,8 +96,8 @@ void faceRecognition::update(){
         }
         
         /*
-         * 
-         *
+         * Pulse detection
+         * TODO: get it working
          */
         
         if(evmEnable)
@@ -109,8 +108,9 @@ void faceRecognition::update(){
 
 //----- Finding the face with face tracker, copying etc. -----
 bool faceRecognition::findFace(ofImage img, ofxFaceTrackerResult &result){
-        
-    camTracker.update(toCv(img));
+    
+    
+    camTracker.update(toCv(img));    
     bool _faceFound = camTracker.getFound();
     
     if(_faceFound)
@@ -169,23 +169,16 @@ bool faceRecognition::findFace(ofImage img, ofxFaceTrackerResult &result){
         result.faceCvGray = result.faceCvColor;
         cvEqualizeHist(result.faceCvGray.getCvImage(), result.faceCvGray.getCvImage());
         
-        //update cam image (use same fbo)
-        /*
-        result.maskFbo.begin();
-        ofClear(0, 255);
-        img.draw(0, 0);
-        ofRect(result.faceBB.x - 10.f, result.faceBB.y - 10.f, result.faceBB.width + 20.f, result.faceBB.height + 20.f);
-        result.maskFbo.end();
-        
-        pix.clear();
-        result.maskFbo.readToPixels(pix);
-        result.camResult.setFromPixels(pix);
-        */
-        findEyeColor(img);
+        if(!result.eyeFound)
+            findEyeColor(img);
+        if(!result.skinFound)
+            findSkinColor(img);
         
     }else{
         result.faceFound = false;
         result.faceNewFound = false;
+        result.eyeFound = false;
+        faceResult.skinFound = false;
         result.recLeastSquareDist = std::numeric_limits<double>::max();
         result.bestPerson = -1;
     }
@@ -193,15 +186,8 @@ bool faceRecognition::findFace(ofImage img, ofxFaceTrackerResult &result){
     return _faceFound;
 }
 
+//--------------------------------------------------------------
 void faceRecognition::findEyeColor(ofImage img){
-    
-    //img is the complete cam image
-    ofPolyline leftEye = camTracker.getImageFeature(ofxFaceTracker::LEFT_EYE);
-    ofRectangle leftBB = leftEye.getBoundingBox();
-    
-    //crop out first eye
-    ofPoint center = leftBB.getCenter();
-    img.crop(leftBB.x, leftBB.y, leftBB.width, leftBB.height);
     
     // Eye Color
     // 1) Copy eye img
@@ -209,8 +195,48 @@ void faceRecognition::findEyeColor(ofImage img){
     // 3) Find outer radius
     // 4) Sample Color
     // - maybe also thresholding by color - seperate and find
-    eyeImage = img;
+    ofPolyline leftEyeOutline = camTracker.getImageFeature(ofxFaceTracker::LEFT_EYE);
+    ofRectangle leftEyeBB = leftEyeOutline.getBoundingBox();
+    faceResult.eyeImage.cropFrom(img, leftEyeBB.x - 10.f, leftEyeBB.y - 10.f, leftEyeBB.width + 20.f, leftEyeBB.height + 20.f);
+    
+    //Convert to cv gray img and run edge detection 
+    convertColor(faceResult.eyeImage.getPixelsRef(), eyeGray, CV_RGB2GRAY);
+    //normalize(eyeGray, eyeGray);
+    equalizeHist(eyeGray, eyeGray);
+    blur(eyeGray, eyeGray, cv::Size(3,3));
+    //Canny(eyeGray, eyeCanny, 122.0, 240.0);
+    circles.clear();
+    HoughCircles(eyeGray, circles, CV_HOUGH_GRADIENT, 2, eyeGray.rows/3, 240.0, 80.0);
+    
+    
+    if(circles.size() > 0){
+        faceResult.eyeFound = true;
+        //when we find circle push it to the results and calculate the color
+        //sample the color around the found center -
+        //TODO: this needs to be done another way, also finding iris needs adj
+        float offset = 2.0f;
+        faceResult.eyeColors.clear();
+        faceResult.eyeColors.push_back( faceResult.eyeImage.getColor(circles[0][0] - offset, circles[0][1]) );
+        faceResult.eyeColors.push_back( faceResult.eyeImage.getColor(circles[0][0], circles[0][1] - offset) );
+        faceResult.eyeColors.push_back( faceResult.eyeImage.getColor(circles[0][0] + offset, circles[0][1]) );
+        faceResult.eyeColors.push_back( faceResult.eyeImage.getColor(circles[0][0], circles[0][1] + offset) );
+    }
 }
+
+//--------------------------------------------------------------
+void faceRecognition::findSkinColor(ofImage img){
+    
+    //2 und 30
+    ofVec2f l, c;
+    l = camTracker.getImagePoint(2);
+    c = camTracker.getImagePoint(30);
+    float dist = l.distance(c);
+    
+    faceResult.skinColor = img.getColor(c.x - dist/2, c.y);
+    faceResult.skinFound = true;
+    
+}
+
 
 //--------------------------------------------------------------
 void faceRecognition::draw(){
@@ -246,14 +272,38 @@ void faceRecognition::draw(){
         faceResult.faceCvColor.draw(camWidth + 60, 60);
         faceResult.faceCvGray.draw(camWidth + 60, 260);
         
+        faceResult.eyeImage.draw(camWidth + 60, 440);
+        drawMat(eyeGray, camWidth + 60, 480);
+        //drawMat(eyeCanny, camWidth + 60 + eyeGray.cols, 480);
+        //draw circles
+        for( size_t i = 0; i < circles.size(); i++ )
+        {
+            ofSetColor(0, 255, 0);
+            ofCircle( circles[i][0] + camWidth + 60, circles[i][1] + 480, circles[i][2] / 2 );
+            ofDrawBitmapString("r: " + ofToString(circles[i][2]), camWidth + 60, 520 + i*10);
+        }
+        
+        if(faceResult.eyeFound){
+            for(int x=0; x<faceResult.eyeColors.size(); x++){
+                ofSetColor(faceResult.eyeColors[x]);
+                ofRect(camWidth + 200, 440 + x*20.f, 50.f, 20.f);
+                ofDrawBitmapString(ofToString( faceResult.eyeColors[x].getSaturation() ), camWidth + 250, 455 + x*20.f);
+            }
+            ofSetColor(255, 255, 255);
+        }
+        
         if(evmEnable)
             evm.draw(camWidth + 60, 460);
         
-        eyeImage.draw(20.f, 60.f);
         ofPushMatrix();
         ofTranslate(20.f, 60.f);
         camTracker.draw();
         ofPopMatrix();
+        
+        //skin color
+        ofSetColor(faceResult.skinColor);
+        ofRect(camWidth + 200, 550.f, 50.f, 20.f);
+        ofDrawBitmapString(ofToString( faceResult.skinColor.getLightness() ), camWidth + 250, 560.f);
         
         ofDrawBitmapStringHighlight(" ID: " + ofToString(faceResult.faceId), faceResult.faceBB.x, faceResult.faceBB.y);
     }
@@ -399,6 +449,7 @@ void faceRecognition::keyReleased(int key){
         uvcExposure = ofClamp(uvcExposure, 0.f, 1.f);
     }
 #endif
+    
 }
 
 //--------------------------------------------------------------

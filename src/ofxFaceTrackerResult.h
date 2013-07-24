@@ -28,9 +28,19 @@ public:
     ofxCvColorImage faceCvColor;
     ofxCvGrayscaleImage faceCvGray;
     
+    //Eye
+    vector<ofColor> eyeColors;
+    ofImage eyeImage;
+    
+    //Skin Color
+    ofColor skinColor;
+    
     bool faceFound;
     bool faceNewFound;
     int faceId;
+    
+    bool eyeFound;
+    bool skinFound;
     
     //face db
     int person;

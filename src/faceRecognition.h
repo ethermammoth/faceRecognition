@@ -38,6 +38,7 @@ public:
     
     bool findFace(ofImage img, ofxFaceTrackerResult &result);
     void findEyeColor(ofImage img);
+    void findSkinColor(ofImage img);
 
     void guiEvent(ofxUIEventArgs &e);
     
@@ -50,13 +51,13 @@ public:
     int finalSize;
     
     //face tracking results
-    int faceIteration;
     ofxFaceTrackerResult faceResult;
     ofShader maskShader;
     
-    ofColor eyeColor;
-    ofImage eyeImage;
-    
+    //temp eye
+    cv::Mat eyeGray;
+    cv::Mat eyeCanny;
+    vector<Vec3f> circles;
     //Main rec
     ofxCvFaceRec recognizer;
     
