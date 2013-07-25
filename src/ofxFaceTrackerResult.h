@@ -29,8 +29,9 @@ public:
     ofxCvGrayscaleImage faceCvGray;
     
     //Eye
-    vector<ofColor> eyeColors;
+    ofColor eyeColor;
     ofImage eyeImage;
+    ofVec2f eyePosition; //position in cam image
     
     //Skin Color
     ofColor skinColor;
